@@ -4,15 +4,11 @@ import authMiddleware from '../middlewares/auth.js'
 import { getDetails } from '../validators/index.js'
 
 const router = express.Router()
-const products = [
-  { id: 1, name: 'Produit 1', price: 10 },
-  { id: 2, name: 'Produit 2', price: 20 },
-  { id: 3, name: 'Produit 3', price: 30 }
-];
+
 
 router.get('/api/products', async (req, res, next) => {
   try {
-    const products = await Product.findAll();
+    const products = await Product.findAll({ include: [User,Bid] });
     res.status(200).json(products);
   } catch (error) {
       console.error('Error fetching products:', error);
