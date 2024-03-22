@@ -3,35 +3,19 @@ import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from '../consts/secret.js'
 import express from 'express'
 import { getDetails } from '../validators/index.js'
-/**
- * @typedef {import('../orm/models/user.js')}
- */
-/**
- * @typedef {import('../types/types.js')}
- */
+import { Request } from 'express';
+import {Token} from "../types/types";
 
 const router = express.Router()
 
 /**
- * @typedef {object} RegisterRequestBody
- * @property {string} username
- * @property {string} email
- * @property {string} password
- */
-
-/**
  * Endpoint pour la création d'un nouvel utilisateur
- * @param {import('express').Request<{}, {}, RegisterRequestBody>} req
- * @param {import('express').Response res
  */
-router.post('/api/auth/register', async (req, res) => {
+router.post('/api/auth/register', async (req: Request<Record<string, never>, {access_token: string} | {error: string; details?: string[]}, {username: string; email: string; password: string}>, res) => {
   try {
-    /** @type {RegisterRequestBody} */
-    const reqBody = req.body
-    const { username, email, password } = reqBody
+    const { username, email, password } = req.body
 
     // Vérifier si l'utilisateur existe déjà
-    /** @type {UserObject | null} */
     const userWithSameEmail = await User.findOne({ where: { email } })
 
     if (userWithSameEmail) {
@@ -39,7 +23,6 @@ router.post('/api/auth/register', async (req, res) => {
     }
 
     // Vérifier si l'utilisateur existe déjà
-    /** @type {UserObject | null} */
     const userWithSameUsername = await User.findOne({
       attributes: ['id', 'username', 'email', 'admin'],
       where: { username }
@@ -50,7 +33,6 @@ router.post('/api/auth/register', async (req, res) => {
     }
 
     // Créer le nouvel utilisateur
-    /** @type {UserObject} */
     const newUser = await User.create({
       username,
       email,
@@ -58,42 +40,26 @@ router.post('/api/auth/register', async (req, res) => {
     })
 
     // Générer un token JWT pour l'authentification future
-    /** @type {Token} */
-    const payload = {
+    const payload: Token = {
       id: newUser.id,
       username,
       email,
       admin: email.endsWith('@admin.org')
     }
-    /** @type {string} */
     const token = jwt.sign(payload, JWT_SECRET)
 
     // Renvoyer l'utilisateur et le token
     res.status(201).json({ access_token: token })
   } catch (e) {
-    res.status(400).json({ error: 'Invalid or missing information', details: getDetails(e) })
+    res.status(400).json({ error: 'Invalid or missing information', details: getDetails(e as Error) })
   }
 })
 
-/**
- * @typedef {object} LoginRequestBody
- * @property {string} email
- * @property {string} password
- */
-
-/**
- * Endpoint pour l'authentification d'un utilisateur enregistré
- * @param {import('express').Request<{}, {}, LoginRequestBody>} req
- * @param {import('express').Response res
- */
-router.post('/api/auth/login', async (req, res) => {
-  /** @type {LoginRequestBody} */
-  const reqBody = req.body
-  const { email, password } = reqBody
+router.post('/api/auth/login', async (req: Request<Record<string, never>, {access_token: string} | {error: string; details?: string[]}, {email: string; password: string}>, res) => {
+  const { email, password } = req.body
 
   try {
     // Vérifier si l'utilisateur existe
-    /** @type {UserObject | null} */
     const user = await User.findOne({
       where: { email }
     })
@@ -110,20 +76,18 @@ router.post('/api/auth/login', async (req, res) => {
     }
 
     // Générer un token JWT pour l'authentification future
-    /** @type {Token} */
-    const payload = {
+    const payload: Token = {
       id: user.id,
       username: user.username,
       email: user.email,
       admin: user.admin
     }
-    /** @type {string} */
     const token = jwt.sign(payload, JWT_SECRET)
 
     // Renvoyer le token
     res.status(200).json({ access_token: token })
   } catch (e) {
-    res.status(401).json({ error: 'Invalid credentials', details: getDetails(e) })
+    res.status(401).json({ error: 'Invalid credentials', details: getDetails(e as Error) })
   }
 })
 
