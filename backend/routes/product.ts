@@ -8,7 +8,7 @@ const router = express.Router()
 
 router.get('/api/products', async (req, res, next) => {
   try {
-    const products = await Product.findAll({ include: [User,Bid] });
+    const products = await Product.findAll({ include: [{model: User, as: 'seller'}, {model: Bid, as: 'bids', include: [{model:User, as: 'bidder'}]}]});
     res.status(200).json(products);
   } catch (error) {
       console.error('Error fetching products:', error);
@@ -18,8 +18,10 @@ router.get('/api/products', async (req, res, next) => {
 
 router.get('/api/products/:productId', async (req, res) => {
   try {
-    const products = await Product.findAll();
+    if(!req.params.productId) return res.status(400).json({ error: 'Product ID is required' });
+    const products = await Product.findAll({ include: [{model: User, as: 'seller'}, {model: Bid, as: 'bids', include: [{model:User, as: 'bidder'}]}]});
     const product = products.find(product => product.id === req.params.productId);
+    if(!product) return res.status(404).json({ error: 'Product not found' });
     res.status(200).json(product);
   } catch (error) {
       console.error('Error fetching products:', error);
