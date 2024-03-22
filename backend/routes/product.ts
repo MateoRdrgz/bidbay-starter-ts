@@ -24,9 +24,8 @@ router.get('/api/products/:productId', async (req, res) => {
   res.status(600).send()
 })
 
-// You can use the authMiddleware with req.user.id to authenticate your endpoint ;)
 
-router.post('/api/products', (req, res) => {
+router.post('/api/products', authMiddleware,async(req, res) => {
   res.status(600).send()
 })
 
@@ -34,8 +33,24 @@ router.put('/api/products/:productId', async (req, res) => {
   res.status(600).send()
 })
 
-router.delete('/api/products/:productId', async (req, res) => {
-  res.status(600).send()
-})
+
+router.delete('/api/products/:productId', authMiddleware, async (req, res) => {
+  try {
+
+    const product = await Product.findByPk(req.params.productId);
+
+    if (!product) {
+      return res.status(404).json();
+    }else{
+      res.status(200).json();
+    }
+  } catch (error) {
+
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+
+  }
+  
+});
 
 export default router
